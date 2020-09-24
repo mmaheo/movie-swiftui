@@ -1,0 +1,57 @@
+//
+//  Request.swift
+//  Shared
+//
+//  Created by Maxime Maheo on 23/06/2020.
+//
+
+import Foundation
+
+enum RequestError: LocalizedError {
+    case failedToCreateRequestWithUrl(String)
+
+    var localizedDescription: String {
+        switch self {
+        case let .failedToCreateRequestWithUrl(url):
+            return "Failed to create the request with url : \(url)"
+        }
+    }
+}
+
+protocol Request {
+    var urlRequest: URLRequest { get }
+}
+
+extension URLRequest {
+    mutating func addQueryParameters(parameters: [String: Any]) {
+        guard
+            !parameters.isEmpty,
+            let stringUrl = url?.absoluteString,
+            var components = URLComponents(string: stringUrl)
+        else { return }
+
+        components.queryItems = components.queryItems ?? []
+
+        for key in parameters.keys.sorted(by: <) {
+            let value = "\(parameters[key] ?? "")"
+
+            if !value.isEmpty {
+                components.queryItems?.append(URLQueryItem(name: key, value: value))
+            }
+        }
+
+        url = components.url
+    }
+
+    mutating func addHttpHeadersFields(parameters: [String: String]) {
+        for key in parameters.keys.sorted(by: <) {
+            setValue(parameters[key], forHTTPHeaderField: key)
+        }
+    }
+
+    mutating func addBodyParameters(_ parameters: Any) {
+        guard let data = try? JSONSerialization.data(withJSONObject: parameters, options: []) else { return }
+
+        httpBody = data
+    }
+}
